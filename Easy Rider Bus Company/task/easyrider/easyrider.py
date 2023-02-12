@@ -29,6 +29,7 @@ class EasyRider:
         self.lines = {}
         self.s_stops = {'Start stops': set(), 'Transfer stops': set(), 'Finish stops': set()}
         self.arr_err = {}
+        self.demand_err = set()
 
     def check_data(self):
         for dataset in self.data:
@@ -66,26 +67,35 @@ class EasyRider:
                     break
                 prev_time = stop.arrival
 
+    def check_on_dem(self):
+        for stops in self.lines.values():
+            for stop in stops:
+                if stop.type == 'O' and stop.name in self.s_stops['Transfer stops']:
+                    self.demand_err.add(stop.name)
+
     def disp_info(self, *args):
-        if 'errors' in args:
+        if 'errors' in args or 'all' in args:
             print(f'\nValidation: {self.field_errors.total()} errors')
             for key in self.template.keys():
                 print(f'{key}: {self.field_errors[key]}')
-        if 'lines' in args:
+        if 'lines' in args or 'all' in args:
             print('\nLine names and number of stops:')
             for line, stops in self.lines.items():
                 print(f'bus_id: {line}, stops: {len(stops)}')
-        if 'stops' in args:
+        if 'stops' in args or 'all' in args:
             print()
             for key, value in self.s_stops.items():
                 print(key + ':', len(value), sorted(list(value)))
-        if 'arrivals' in args:
+        if 'arrivals' in args or 'all' in args:
             print('\nArrival time test:')
             if not self.arr_err:
                 print('OK')
             else:
                 for line, stop in self.arr_err.items():
                     print(f'bus_id line {line}: wrong time on station {stop}')
+        if 'on_dem' in args or 'all' in args:
+            print('\nOn demand stops test:')
+            print('Wrong stop type:', sorted(list(self.demand_err)) if self.demand_err else 'OK')
 
 
 def main():
@@ -94,7 +104,8 @@ def main():
     rider.check_data()
     rider.check_lines()
     rider.check_arrivals()
-    rider.disp_info('arrivals')
+    rider.check_on_dem()
+    rider.disp_info('all')
 
 
 if __name__ == '__main__':
